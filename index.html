@@ -33,15 +33,10 @@
           <strong id="preparedCount">0</strong>
           <span>Scan 2</span>
         </article>
-        <article class="summary-card">
-          <p>Bins delivered</p>
-          <strong id="deliveredCount">0</strong>
-          <span>Scan 3</span>
-        </article>
         <article class="summary-card accent-card">
           <p>Trikes passed</p>
           <strong id="passedCount">0</strong>
-          <span>Scan 4</span>
+          <span>Scan 3</span>
         </article>
       </section>
 
@@ -62,11 +57,8 @@
             <button class="step-button" data-step="prepare" type="button">
               <span>2</span><b>Prepare</b><small>Bin label</small>
             </button>
-            <button class="step-button" data-step="deliver" type="button">
-              <span>3</span><b>Deliver</b><small>Bin at station</small>
-            </button>
             <button class="step-button" data-step="inspect" type="button">
-              <span>4</span><b>Inspect</b><small>Trike ID</small>
+              <span>3</span><b>Inspect</b><small>Trike ID</small>
             </button>
           </div>
 
@@ -77,7 +69,7 @@
               <input id="barcodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Scan or type a barcode, then press Enter" />
               <button id="scanButton" type="button">Record scan</button>
             </div>
-            <p class="input-hint" id="inputHint">Expected format: CTN-ITEM-###</p>
+            <p class="input-hint" id="inputHint">Scan the carton label.</p>
           </div>
 
           <div class="scan-options" id="scanOptions">
@@ -88,19 +80,6 @@
             <div class="field hidden" id="binQuantityField">
               <label for="binQuantityInput">Quantity placed in bin</label>
               <input id="binQuantityInput" type="number" min="1" max="999" value="10" />
-            </div>
-            <div class="field hidden" id="stationField">
-              <label for="stationSelect">Destination workstation</label>
-              <select id="stationSelect">
-                <option value="L1-S1">Line 1 · Station 1 (A, B)</option>
-                <option value="L1-S2">Line 1 · Station 2 (C, F)</option>
-                <option value="L1-S3">Line 1 · Station 3 (D)</option>
-                <option value="L1-S4" selected>Line 1 · Station 4 (E, G)</option>
-                <option value="L2-S1">Line 2 · Station 1 (A, B)</option>
-                <option value="L2-S2">Line 2 · Station 2 (C, F)</option>
-                <option value="L2-S3">Line 2 · Station 3 (D)</option>
-                <option value="L2-S4">Line 2 · Station 4 (E, G)</option>
-              </select>
             </div>
             <div class="field hidden" id="inspectionField">
               <label for="inspectionSelect">Inspection result</label>
@@ -141,14 +120,14 @@
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Material status</p>
-            <h2>Inventory and workstation delivery</h2>
+            <h2>Component inventory</h2>
           </div>
           <p class="updated-label" id="updatedLabel">Not yet updated</p>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Component</th><th>Received</th><th>Available</th><th>In prepared bins</th><th>Delivered</th><th>Last destination</th></tr>
+              <tr><th>Component</th><th>Received</th><th>Available</th><th>In prepared bins</th></tr>
             </thead>
             <tbody id="inventoryBody"></tbody>
           </table>
@@ -163,7 +142,7 @@
           </div>
           <button class="secondary-button" type="button" id="printButton">Print labels</button>
         </div>
-        <p class="section-note">Use these four labels for a complete wheel-set demonstration. A USB barcode scanner reads them as keyboard input and submits each code with Enter.</p>
+        <p class="section-note">Use these three labels for a complete wheel-set demonstration. A USB barcode scanner reads them as keyboard input and submits each code with Enter.</p>
         <div class="label-grid">
           <article class="barcode-label">
             <div class="label-top"><span>SCAN 1</span><b>Receiving</b></div>
@@ -178,13 +157,7 @@
             <small>Prepare bin · quantity 10</small>
           </article>
           <article class="barcode-label">
-            <div class="label-top"><span>SCAN 3</span><b>Workstation</b></div>
-            <img src="assets/scan3-bin.svg" alt="Barcode for BIN-WHEEL-01" />
-            <code>BIN-WHEEL-01</code>
-            <small>Deliver to Line 1 · Station 4</small>
-          </article>
-          <article class="barcode-label">
-            <div class="label-top"><span>SCAN 4</span><b>Final inspection</b></div>
+            <div class="label-top"><span>SCAN 3</span><b>Final inspection</b></div>
             <img src="assets/scan4-trike.svg" alt="Barcode for TRK-0001" />
             <code>TRK-0001</code>
             <small>Record pass or route to rework</small>
@@ -195,13 +168,12 @@
       <section class="demo-script">
         <div>
           <p class="eyebrow">Suggested presentation sequence</p>
-          <h2>A complete traceability cycle in four scans</h2>
+          <h2>A complete traceability cycle in three scans</h2>
         </div>
         <ol>
           <li><span>1</span><p><b>Receive</b> the wheel-set carton and add 20 units to available inventory.</p></li>
           <li><span>2</span><p><b>Prepare</b> a bin with 10 wheel sets; the system reserves the material.</p></li>
-          <li><span>3</span><p><b>Deliver</b> the bin by AMR to Line 1, Station 4; the station inventory is updated.</p></li>
-          <li><span>4</span><p><b>Inspect</b> trike TRK-0001 and release it to packing or route it to rework.</p></li>
+          <li><span>3</span><p><b>Inspect</b> trike TRK-0001 and release it to packing or route it to rework.</p></li>
         </ol>
       </section>
     </main>

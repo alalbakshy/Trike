@@ -11,13 +11,12 @@ const COMPONENTS = {
 };
 
 const STEP_CONFIG = {
-  receive: { number: 1, title: "Receiving scan recorded", hint: "Expected format: CTN-ITEM-###", prefix: "CTN" },
-  prepare: { number: 2, title: "Bin preparation recorded", hint: "Expected format: BIN-ITEM-##", prefix: "BIN" },
-  deliver: { number: 3, title: "Workstation delivery recorded", hint: "Scan the same prepared-bin code at the destination station", prefix: "BIN" },
-  inspect: { number: 4, title: "Final inspection recorded", hint: "Expected format: TRK-####", prefix: "TRK" }
+  receive: { number: 1, hint: "Scan the carton label." },
+  prepare: { number: 2, hint: "Scan the prepared bin label." },
+  inspect: { number: 3, hint: "Scan the finished-trike ID." }
 };
 
-const STORAGE_KEY = "trikeflow-barcode-demo-v1";
+const STORAGE_KEY = "trikeflow-barcode-demo-v2";
 let currentStep = "receive";
 let state = loadState();
 
@@ -26,8 +25,8 @@ const barcodeInput = el("barcodeInput");
 
 function blankState() {
   const inventory = {};
-  Object.keys(COMPONENTS).forEach(key => inventory[key] = { received: 0, available: 0, prepared: 0, delivered: 0, destination: "—" });
-  return { receivedCount: 0, preparedCount: 0, deliveredCount: 0, passedCount: 0, reworkCount: 0, inventory, bins: {}, trikes: {}, log: [], updatedAt: null };
+  Object.keys(COMPONENTS).forEach(key => inventory[key] = { received: 0, available: 0, prepared: 0 });
+  return { receivedCount: 0, preparedCount: 0, passedCount: 0, reworkCount: 0, inventory, bins: {}, trikes: {}, log: [], updatedAt: null };
 }
 
 function loadState() {
@@ -68,18 +67,17 @@ function addLog(step, code, detail) {
 
 function validateFormat(code, step) {
   if (step === "receive") return /^CTN-[A-Z]+-\d{3}$/.test(code);
-  if (step === "prepare" || step === "deliver") return /^BIN-[A-Z]+-\d{2}$/.test(code);
+  if (step === "prepare") return /^BIN-[A-Z]+-\d{2}$/.test(code);
   return /^TRK-\d{4}$/.test(code);
 }
 
 function processScan() {
   const code = cleanCode(barcodeInput.value);
   if (!code) return setMessage("error", "No barcode detected", "Scan a label or type a code before recording the scan.");
-  if (!validateFormat(code, currentStep)) return setMessage("error", "Barcode does not match this scan point", `For Scan ${STEP_CONFIG[currentStep].number}, use ${STEP_CONFIG[currentStep].hint.replace("Expected format: ", "")}.`);
+  if (!validateFormat(code, currentStep)) return setMessage("error", "Scan not recorded", "Use the sample label for the selected scan point.");
 
   if (currentStep === "receive") receiveCarton(code);
   if (currentStep === "prepare") prepareBin(code);
-  if (currentStep === "deliver") deliverBin(code);
   if (currentStep === "inspect") inspectTrike(code);
 }
 
@@ -101,32 +99,15 @@ function prepareBin(code) {
   const qty = Number(el("binQuantityInput").value);
   if (!component) return setMessage("error", "Unknown component code", "Use a valid bin label such as BIN-WHEEL-01.");
   if (!Number.isFinite(qty) || qty < 1) return setMessage("error", "Invalid quantity", "Enter a bin quantity greater than zero.");
-  if (state.bins[code]?.status === "prepared") return setMessage("error", "Bin is already prepared", `${code} is waiting for delivery. Continue with Scan 3.`);
+  if (state.bins[code]?.status === "prepared") return setMessage("error", "Bin is already prepared", `${code} has already been recorded.`);
   if (state.inventory[component].available < qty) return setMessage("error", "Not enough available material", `Available: ${state.inventory[component].available}. Receive a carton before preparing this bin.`);
   state.inventory[component].available -= qty;
   state.inventory[component].prepared += qty;
-  state.bins[code] = { component, qty, status: "prepared", preparedAt: new Date().toISOString(), destination: null };
+  state.bins[code] = { component, qty, status: "prepared", preparedAt: new Date().toISOString() };
   state.preparedCount += 1;
   addLog("prepare", code, `${qty} ${COMPONENTS[component].toLowerCase()} units counted into the bin and reserved.`);
   persist();
   finishScan("success", "Scan 2 accepted", `${code}: bin prepared with ${qty} units and placed in the AMR pickup area.`);
-}
-
-function deliverBin(code) {
-  const bin = state.bins[code];
-  const destination = el("stationSelect").value;
-  if (!bin) return setMessage("error", "Bin has not been prepared", `Complete Scan 2 for ${code} before delivering it.`);
-  if (bin.status === "delivered") return setMessage("error", "Bin was already delivered", `${code} is recorded at ${bin.destination}.`);
-  state.inventory[bin.component].prepared -= bin.qty;
-  state.inventory[bin.component].delivered += bin.qty;
-  state.inventory[bin.component].destination = destination;
-  bin.status = "delivered";
-  bin.destination = destination;
-  bin.deliveredAt = new Date().toISOString();
-  state.deliveredCount += 1;
-  addLog("deliver", code, `AMR delivery confirmed at ${destination}; ${bin.qty} units issued to the workstation.`);
-  persist();
-  finishScan("success", "Scan 3 accepted", `${code}: AMR delivery confirmed at ${destination}; station inventory updated.`);
 }
 
 function inspectTrike(code) {
@@ -138,7 +119,7 @@ function inspectTrike(code) {
   const detail = result === "pass" ? "Inspection passed; trike released to packing." : "Inspection failed; trike routed to the rework station.";
   addLog("inspect", code, detail);
   persist();
-  finishScan(result === "pass" ? "success" : "error", "Scan 4 accepted", `${code}: ${detail}`);
+  finishScan(result === "pass" ? "success" : "error", "Scan 3 accepted", `${code}: ${detail}`);
 }
 
 function finishScan(type, title, detail) {
@@ -152,10 +133,9 @@ function selectStep(step) {
   document.querySelectorAll(".step-button").forEach(button => button.classList.toggle("active", button.dataset.step === step));
   el("quantityField").classList.toggle("hidden", step !== "receive");
   el("binQuantityField").classList.toggle("hidden", step !== "prepare");
-  el("stationField").classList.toggle("hidden", step !== "deliver");
   el("inspectionField").classList.toggle("hidden", step !== "inspect");
   el("inputHint").textContent = STEP_CONFIG[step].hint;
-  setMessage("", `Ready for Scan ${STEP_CONFIG[step].number}`, step === "receive" ? "Scan an inbound carton label to begin." : step === "prepare" ? "Scan the filled bin at component preparation." : step === "deliver" ? "Select the destination and scan the bin when it reaches the workstation." : "Select the inspection result and scan the finished-trike ID.");
+  setMessage("", `Ready for Scan ${STEP_CONFIG[step].number}`, step === "receive" ? "Scan an inbound carton label to begin." : step === "prepare" ? "Scan the filled bin at component preparation." : "Select the inspection result and scan the finished-trike ID.");
   barcodeInput.value = "";
   barcodeInput.focus();
 }
@@ -163,12 +143,11 @@ function selectStep(step) {
 function render() {
   el("receivedCount").textContent = state.receivedCount;
   el("preparedCount").textContent = state.preparedCount;
-  el("deliveredCount").textContent = state.deliveredCount;
   el("passedCount").textContent = state.passedCount;
 
   el("inventoryBody").innerHTML = Object.entries(COMPONENTS).map(([key, name]) => {
-    const item = state.inventory[key] || { received: 0, available: 0, prepared: 0, delivered: 0, destination: "—" };
-    return `<tr><td>${name}</td><td><span class="qty-pill">${item.received}</span></td><td>${item.available}</td><td>${item.prepared}</td><td>${item.delivered}</td><td class="destination">${item.destination}</td></tr>`;
+    const item = state.inventory[key] || { received: 0, available: 0, prepared: 0 };
+    return `<tr><td>${name}</td><td><span class="qty-pill">${item.received}</span></td><td>${item.available}</td><td>${item.prepared}</td></tr>`;
   }).join("");
 
   el("updatedLabel").textContent = state.updatedAt ? `Updated ${new Date(state.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Not yet updated";
