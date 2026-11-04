@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Barcode traceability demonstration for the trike manufacturing system." />
+    <title>TrikeFlow Barcode System</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div>
+          <p class="eyebrow">IE 420 · Phase 2 live demonstration</p>
+          <h1>TrikeFlow Barcode System</h1>
+        </div>
+      </div>
+      <div class="system-status"><span class="status-dot"></span>System ready</div>
+    </header>
+
+    <main>
+      <section class="summary-grid" aria-label="System summary">
+        <article class="summary-card">
+          <p>Cartons received</p>
+          <strong id="receivedCount">0</strong>
+          <span>Scan 1</span>
+        </article>
+        <article class="summary-card">
+          <p>Bins prepared</p>
+          <strong id="preparedCount">0</strong>
+          <span>Scan 2</span>
+        </article>
+        <article class="summary-card">
+          <p>Bins delivered</p>
+          <strong id="deliveredCount">0</strong>
+          <span>Scan 3</span>
+        </article>
+        <article class="summary-card accent-card">
+          <p>Trikes passed</p>
+          <strong id="passedCount">0</strong>
+          <span>Scan 4</span>
+        </article>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="panel scanner-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Live scanner</p>
+              <h2>Record a material movement</h2>
+            </div>
+            <button class="ghost-button" id="resetButton" type="button">Reset demo</button>
+          </div>
+
+          <div class="step-selector" role="group" aria-label="Select scanning point">
+            <button class="step-button active" data-step="receive" type="button">
+              <span>1</span><b>Receive</b><small>Carton label</small>
+            </button>
+            <button class="step-button" data-step="prepare" type="button">
+              <span>2</span><b>Prepare</b><small>Bin label</small>
+            </button>
+            <button class="step-button" data-step="deliver" type="button">
+              <span>3</span><b>Deliver</b><small>Bin at station</small>
+            </button>
+            <button class="step-button" data-step="inspect" type="button">
+              <span>4</span><b>Inspect</b><small>Trike ID</small>
+            </button>
+          </div>
+
+          <div class="scan-area">
+            <label for="barcodeInput">Scan code</label>
+            <div class="scan-input-wrap">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5v14M7 5v14M11 5v14M14 5v14M19 5v14M17 5v14" /></svg>
+              <input id="barcodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Scan or type a barcode, then press Enter" />
+              <button id="scanButton" type="button">Record scan</button>
+            </div>
+            <p class="input-hint" id="inputHint">Expected format: CTN-ITEM-###</p>
+          </div>
+
+          <div class="scan-options" id="scanOptions">
+            <div class="field" id="quantityField">
+              <label for="quantityInput">Quantity in carton</label>
+              <input id="quantityInput" type="number" min="1" max="999" value="20" />
+            </div>
+            <div class="field hidden" id="binQuantityField">
+              <label for="binQuantityInput">Quantity placed in bin</label>
+              <input id="binQuantityInput" type="number" min="1" max="999" value="10" />
+            </div>
+            <div class="field hidden" id="stationField">
+              <label for="stationSelect">Destination workstation</label>
+              <select id="stationSelect">
+                <option value="L1-S1">Line 1 · Station 1 (A, B)</option>
+                <option value="L1-S2">Line 1 · Station 2 (C, F)</option>
+                <option value="L1-S3">Line 1 · Station 3 (D)</option>
+                <option value="L1-S4" selected>Line 1 · Station 4 (E, G)</option>
+                <option value="L2-S1">Line 2 · Station 1 (A, B)</option>
+                <option value="L2-S2">Line 2 · Station 2 (C, F)</option>
+                <option value="L2-S3">Line 2 · Station 3 (D)</option>
+                <option value="L2-S4">Line 2 · Station 4 (E, G)</option>
+              </select>
+            </div>
+            <div class="field hidden" id="inspectionField">
+              <label for="inspectionSelect">Inspection result</label>
+              <select id="inspectionSelect">
+                <option value="pass">Pass · release to pack</option>
+                <option value="rework">Fail · send to rework</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="message" id="message" role="status" aria-live="polite">
+            <span class="message-icon">i</span>
+            <div><b>Ready for Scan 1</b><p>Scan an inbound carton label to begin.</p></div>
+          </div>
+        </section>
+
+        <aside class="panel activity-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Traceability record</p>
+              <h2>Recent activity</h2>
+            </div>
+            <button class="icon-button" id="downloadButton" type="button" title="Download scan log" aria-label="Download scan log">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" /></svg>
+            </button>
+          </div>
+          <div id="activityList" class="activity-list">
+            <div class="empty-state">
+              <div class="empty-icon">◎</div>
+              <p>No scans recorded yet.</p>
+              <span>Your first receiving scan will appear here.</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="panel inventory-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Material status</p>
+            <h2>Inventory and workstation delivery</h2>
+          </div>
+          <p class="updated-label" id="updatedLabel">Not yet updated</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Component</th><th>Received</th><th>Available</th><th>In prepared bins</th><th>Delivered</th><th>Last destination</th></tr>
+            </thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel labels-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Live-demo aids</p>
+            <h2>Printable sample labels</h2>
+          </div>
+          <button class="secondary-button" type="button" id="printButton">Print labels</button>
+        </div>
+        <p class="section-note">Use these four labels for a complete wheel-set demonstration. A USB barcode scanner reads them as keyboard input and submits each code with Enter.</p>
+        <div class="label-grid">
+          <article class="barcode-label">
+            <div class="label-top"><span>SCAN 1</span><b>Receiving</b></div>
+            <img src="assets/scan1-carton.svg" alt="Barcode for CTN-WHEEL-001" />
+            <code>CTN-WHEEL-001</code>
+            <small>Wheel sets · carton quantity 20</small>
+          </article>
+          <article class="barcode-label">
+            <div class="label-top"><span>SCAN 2</span><b>Component prep</b></div>
+            <img src="assets/scan2-bin.svg" alt="Barcode for BIN-WHEEL-01" />
+            <code>BIN-WHEEL-01</code>
+            <small>Prepare bin · quantity 10</small>
+          </article>
+          <article class="barcode-label">
+            <div class="label-top"><span>SCAN 3</span><b>Workstation</b></div>
+            <img src="assets/scan3-bin.svg" alt="Barcode for BIN-WHEEL-01" />
+            <code>BIN-WHEEL-01</code>
+            <small>Deliver to Line 1 · Station 4</small>
+          </article>
+          <article class="barcode-label">
+            <div class="label-top"><span>SCAN 4</span><b>Final inspection</b></div>
+            <img src="assets/scan4-trike.svg" alt="Barcode for TRK-0001" />
+            <code>TRK-0001</code>
+            <small>Record pass or route to rework</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="demo-script">
+        <div>
+          <p class="eyebrow">Suggested presentation sequence</p>
+          <h2>A complete traceability cycle in four scans</h2>
+        </div>
+        <ol>
+          <li><span>1</span><p><b>Receive</b> the wheel-set carton and add 20 units to available inventory.</p></li>
+          <li><span>2</span><p><b>Prepare</b> a bin with 10 wheel sets; the system reserves the material.</p></li>
+          <li><span>3</span><p><b>Deliver</b> the bin by AMR to Line 1, Station 4; the station inventory is updated.</p></li>
+          <li><span>4</span><p><b>Inspect</b> trike TRK-0001 and release it to packing or route it to rework.</p></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <p>Prototype for academic live demonstration · Data is stored only in this browser.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
